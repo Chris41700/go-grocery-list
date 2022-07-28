@@ -8,6 +8,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type Item struct {
+	UID   string  `json:"UID"`
+	Name  string  `json:"Name"`
+	Price float64 `json:"Price"`
+}
+
 func homepage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Endpoint called: homepage()")
 }
