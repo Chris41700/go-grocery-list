@@ -60,13 +60,31 @@ func _deleteItemAtUid(uid string) {
 	}
 }
 
+func updateItem(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var item Item
+	_ = json.NewDecoder(r.Body).Decode(&item)
+
+	params := mux.Vars(r)
+
+	//Deletes the item at UID
+	_deleteItemAtUid(params["uid"])
+
+	//Create item with new data
+	shopping_list = append(shopping_list, item)
+
+	json.NewEncoder(w).Encode(shopping_list)
+}
+
 func handleRequests() {
 	router := mux.NewRouter().StrictSlash(true)
 
-	router.HandleFunc("/", homepage).Methods("GET")        //homepage
-	router.HandleFunc("/list", getList).Methods("GET")     //view items in shopping list
-	router.HandleFunc("/list", createItem).Methods("POST") //add items in shopping list
-	router.HandleFunc("/list/{uid}", deleteItem).Methods("DELETE")
+	router.HandleFunc("/", homepage).Methods("GET")                //homepage
+	router.HandleFunc("/list", getList).Methods("GET")             //view items
+	router.HandleFunc("/list", createItem).Methods("POST")         //add items
+	router.HandleFunc("/list/{uid}", deleteItem).Methods("DELETE") //delete item
+	router.HandleFunc("/list/{uid}", updateItem).Methods("PUT")    //update item
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
