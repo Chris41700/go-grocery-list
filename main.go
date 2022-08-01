@@ -41,12 +41,32 @@ func createItem(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("createItem func called")
 }
 
+func deleteItem(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r)
+
+	_deleteItemAtUid(params["uid"])
+
+	json.NewEncoder(w).Encode(shopping_list)
+}
+
+func _deleteItemAtUid(uid string) {
+	for index, item := range shopping_list {
+		if item.UID == uid {
+			shopping_list = append(shopping_list[:index], shopping_list[index+1:]...)
+			break
+		}
+	}
+}
+
 func handleRequests() {
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/", homepage).Methods("GET")        //homepage
 	router.HandleFunc("/list", getList).Methods("GET")     //view items in shopping list
 	router.HandleFunc("/list", createItem).Methods("POST") //add items in shopping list
+	router.HandleFunc("/list/{uid}", deleteItem).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
