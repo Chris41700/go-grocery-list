@@ -10,12 +10,13 @@ import (
 )
 
 type Item struct {
-	UID   string  `json:"UID"`
-	Name  string  `json:"Name"`
-	Price float64 `json:"Price"`
+	UID      string  `json:"UID"`
+	Name     string  `json:"Name"`
+	Price    float64 `json:"Price"`
+	Quantity int     `json:"Quantity"`
 }
 
-var shopping_list []Item
+var grocery_list []Item
 
 func homepage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Endpoint called: homepage()")
@@ -25,7 +26,7 @@ func getList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Println("Function Called: getList()")
 
-	json.NewEncoder(w).Encode(shopping_list)
+	json.NewEncoder(w).Encode(grocery_list)
 }
 
 func createItem(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +35,7 @@ func createItem(w http.ResponseWriter, r *http.Request) {
 	var item Item
 	_ = json.NewDecoder(r.Body).Decode(&item)
 
-	shopping_list = append(shopping_list, item)
+	grocery_list = append(grocery_list, item)
 
 	json.NewEncoder(w).Encode(item)
 
@@ -48,13 +49,13 @@ func deleteItem(w http.ResponseWriter, r *http.Request) {
 
 	_deleteItemAtUid(params["uid"])
 
-	json.NewEncoder(w).Encode(shopping_list)
+	json.NewEncoder(w).Encode(grocery_list)
 }
 
 func _deleteItemAtUid(uid string) {
-	for index, item := range shopping_list {
+	for index, item := range grocery_list {
 		if item.UID == uid {
-			shopping_list = append(shopping_list[:index], shopping_list[index+1:]...)
+			grocery_list = append(grocery_list[:index], grocery_list[index+1:]...)
 			break
 		}
 	}
@@ -72,9 +73,9 @@ func updateItem(w http.ResponseWriter, r *http.Request) {
 	_deleteItemAtUid(params["uid"])
 
 	//Create item with new data
-	shopping_list = append(shopping_list, item)
+	grocery_list = append(grocery_list, item)
 
-	json.NewEncoder(w).Encode(shopping_list)
+	json.NewEncoder(w).Encode(grocery_list)
 }
 
 func handleRequests() {
@@ -91,16 +92,18 @@ func handleRequests() {
 
 func main() {
 	//append item to slice
-	shopping_list = append(shopping_list, Item{
-		UID:   "0",
-		Name:  "Cheese",
-		Price: 4.99,
+	grocery_list = append(grocery_list, Item{
+		UID:      "0",
+		Name:     "Cheese",
+		Price:    4.99,
+		Quantity: 1,
 	})
 
-	shopping_list = append(shopping_list, Item{
-		UID:   "1",
-		Name:  "Milk",
-		Price: 3.25,
+	grocery_list = append(grocery_list, Item{
+		UID:      "1",
+		Name:     "Milk",
+		Price:    3.25,
+		Quantity: 2,
 	})
 
 	handleRequests()
