@@ -24,9 +24,20 @@ func homepage(w http.ResponseWriter, r *http.Request) {
 
 func getList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	fmt.Println("Function Called: getList()")
 
 	json.NewEncoder(w).Encode(grocery_list)
+}
+
+func getItem(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	itemUID := mux.Vars(r)["uid"]
+
+	for _, singleItem := range grocery_list {
+		if singleItem.UID == itemUID {
+			json.NewEncoder(w).Encode(singleItem)
+		}
+	}
 }
 
 func createItem(w http.ResponseWriter, r *http.Request) {
@@ -81,11 +92,12 @@ func updateItem(w http.ResponseWriter, r *http.Request) {
 func handleRequests() {
 	router := mux.NewRouter().StrictSlash(true)
 
-	router.HandleFunc("/", homepage).Methods("GET")                //homepage
-	router.HandleFunc("/list", getList).Methods("GET")             //view items
-	router.HandleFunc("/list", createItem).Methods("POST")         //add items
-	router.HandleFunc("/list/{uid}", deleteItem).Methods("DELETE") //delete item
-	router.HandleFunc("/list/{uid}", updateItem).Methods("PUT")    //update item
+	router.HandleFunc("/", homepage).Methods("GET")                //Homepage
+	router.HandleFunc("/list", getList).Methods("GET")             //View list
+	router.HandleFunc("/list/{uid}", getItem).Methods("GET")       //View item
+	router.HandleFunc("/list", createItem).Methods("POST")         //Add items
+	router.HandleFunc("/list/{uid}", deleteItem).Methods("DELETE") //Delete item
+	router.HandleFunc("/list/{uid}", updateItem).Methods("PUT")    //Update item
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
