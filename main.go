@@ -78,15 +78,17 @@ func updateItem(w http.ResponseWriter, r *http.Request) {
 	var item Item
 	_ = json.NewDecoder(r.Body).Decode(&item)
 
-	params := mux.Vars(r)
+	params := mux.Vars(r)["uid"]
 
-	//Deletes the item at UID
-	_deleteItemAtUid(params["uid"])
-
-	//Create item with new data
-	grocery_list = append(grocery_list, item)
-
-	json.NewEncoder(w).Encode(grocery_list)
+	for i, singleItem := range grocery_list {
+		if singleItem.UID == params {
+			singleItem.Name = item.Name
+			singleItem.Price = item.Price
+			singleItem.Quantity = item.Quantity
+			grocery_list = append(grocery_list[:i], singleItem)
+			json.NewEncoder(w).Encode(singleItem)
+		}
+	}
 }
 
 func handleRequests() {
@@ -97,7 +99,7 @@ func handleRequests() {
 	router.HandleFunc("/list/{uid}", getItem).Methods("GET")       //View item
 	router.HandleFunc("/list", createItem).Methods("POST")         //Add items
 	router.HandleFunc("/list/{uid}", deleteItem).Methods("DELETE") //Delete item
-	router.HandleFunc("/list/{uid}", updateItem).Methods("PUT")    //Update item
+	router.HandleFunc("/list/{uid}", updateItem).Methods("PATCH")  //Update item
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
