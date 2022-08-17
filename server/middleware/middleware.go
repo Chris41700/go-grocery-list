@@ -1,22 +1,47 @@
-package main
+package middleware
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
+
+	"go.mongodb.org/driver-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type Item struct {
-	UID      string  `json:"UID"`
-	Name     string  `json:"Name"`
-	Price    float64 `json:"Price"`
-	Quantity int     `json:"Quantity"`
-}
+const connectionString = "Connection String"
 
-var grocery_list []Item
+const dbName = "Cluster0"
+
+const collName = "grocerylist"
+
+var collection *mongo.Collection
+
+func init() {
+	clientOptions := options.Client().ApplyURI(connectionString)
+
+	client, err := mongo.Connect(context.TODO(), clientOptions)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = client.Ping(context.TODO(), nil)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Connected to MongoDB!")
+
+	collection = client.Database(dbName).Collection(collName)
+
+	fmt.Println("Collection instance created!")
+}
 
 func homepage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Endpoint called: homepage()")
@@ -78,10 +103,10 @@ func updateItem(w http.ResponseWriter, r *http.Request) {
 	var item Item
 	_ = json.NewDecoder(r.Body).Decode(&item)
 
-	params := mux.Vars(r)["uid"]
+	//params := mux.Vars(r)["uid"]
 
 	for i, singleItem := range grocery_list {
-		if singleItem.UID == params {
+		if singleItem.UID == item.UID {
 			singleItem.Name = item.Name
 			singleItem.Price = item.Price
 			singleItem.Quantity = item.Quantity
@@ -89,36 +114,4 @@ func updateItem(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(singleItem)
 		}
 	}
-}
-
-func handleRequests() {
-	router := mux.NewRouter().StrictSlash(true)
-
-	router.HandleFunc("/", homepage).Methods("GET")                //Homepage
-	router.HandleFunc("/list", getList).Methods("GET")             //View list
-	router.HandleFunc("/list/{uid}", getItem).Methods("GET")       //View item
-	router.HandleFunc("/list", createItem).Methods("POST")         //Add items
-	router.HandleFunc("/list/{uid}", deleteItem).Methods("DELETE") //Delete item
-	router.HandleFunc("/list/{uid}", updateItem).Methods("PATCH")  //Update item
-
-	log.Fatal(http.ListenAndServe(":8000", router))
-}
-
-func main() {
-	//append item to slice
-	grocery_list = append(grocery_list, Item{
-		UID:      "0",
-		Name:     "Cheese",
-		Price:    4.99,
-		Quantity: 1,
-	})
-
-	grocery_list = append(grocery_list, Item{
-		UID:      "1",
-		Name:     "Milk",
-		Price:    3.25,
-		Quantity: 2,
-	})
-
-	handleRequests()
 }
