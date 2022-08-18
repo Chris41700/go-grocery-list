@@ -1,16 +1,11 @@
 package middleware
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-
-	"go.mongodb.org/driver-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func homepage(w http.ResponseWriter, r *http.Request) {
