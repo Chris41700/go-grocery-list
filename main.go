@@ -1,41 +1,21 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
 
-	router.HandleFunc("/", homepage).Methods("GET")                //Homepage
-	router.HandleFunc("/list", getList).Methods("GET")             //View list
-	router.HandleFunc("/list/{uid}", getItem).Methods("GET")       //View item
-	router.HandleFunc("/list", createItem).Methods("POST")         //Add items
-	router.HandleFunc("/list/{uid}", deleteItem).Methods("DELETE") //Delete item
-	router.HandleFunc("/list", updateItem).Methods("PATCH")        //Update item
+	router.HandleFunc("/", homepage).Methods("GET", "OPTIONS")                //Homepage
+	router.HandleFunc("/list", getList).Methods("GET", "OPTIONS")             //View list
+	router.HandleFunc("/list/{uid}", getItem).Methods("GET", "OPTIONS")       //View item
+	router.HandleFunc("/list", createItem).Methods("POST", "OPTIONS")         //Add items
+	router.HandleFunc("/list/{uid}", deleteItem).Methods("DELETE", "OPTIONS") //Delete item
+	router.HandleFunc("/list", updateItem).Methods("PATCH", "OPTIONS")        //Update item
 
 	log.Fatal(http.ListenAndServe(":8000", router))
-}
-
-func ConnectDB() *mongo.Collection {
-	clientOptions := options.Client().ApplyURI("Connection String")
-
-	client, err := mongo.Connect(context.TODO(), clientOptions)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("Connected to MongoDB!")
-
-	collection := client.Database("grocerylist").Collection("items")
-
-	return collection
 }

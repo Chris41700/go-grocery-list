@@ -1,12 +1,53 @@
 package middleware
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"go-grocery-list-backend/models"
+	"log"
 	"net/http"
+	"os"
+
+	"../models"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
+
+func ConnectDB() *mongo.Collection {
+
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	uri := os.Getenv("MONGODB_URL")
+
+	clientOptions := options.Client().ApplyURI(uri)
+
+	client, err := mongo.Connect(context.TODO(), clientOptions)
+
+	defer func() {
+		if err = client.Disconnect(context.TODO()); err != nil {
+			panic(err)
+		}
+	}()
+
+	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Connected to MongoDB!")
+
+	collection := client.Database("grocerylist").Collection("items")
+
+	return collection
+}
 
 func homepage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Endpoint called: homepage()")
@@ -14,6 +55,8 @@ func homepage(w http.ResponseWriter, r *http.Request) {
 
 func getList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+
+	var grocery_list models.GroceryList
 
 	json.NewEncoder(w).Encode(grocery_list)
 }
