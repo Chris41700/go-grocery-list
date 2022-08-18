@@ -13,36 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const connectionString = "Connection String"
-
-const dbName = "Cluster0"
-
-const collName = "grocerylist"
-
-var collection *mongo.Collection
-
-func init() {
-	clientOptions := options.Client().ApplyURI(connectionString)
-
-	client, err := mongo.Connect(context.TODO(), clientOptions)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = client.Ping(context.TODO(), nil)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("Connected to MongoDB!")
-
-	collection = client.Database(dbName).Collection(collName)
-
-	fmt.Println("Collection instance created!")
-}
-
 func homepage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Endpoint called: homepage()")
 }

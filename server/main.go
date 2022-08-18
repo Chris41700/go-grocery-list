@@ -2,16 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
-	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-collection := helper.ConnectDB()
 
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
@@ -24,4 +22,20 @@ func main() {
 	router.HandleFunc("/list", updateItem).Methods("PATCH")        //Update item
 
 	log.Fatal(http.ListenAndServe(":8000", router))
+}
+
+func ConnectDB() *mongo.Collection {
+	clientOptions := options.Client().ApplyURI("mongodb+srv://Chris41700:<TheLazyCoder41700>@cluster0.5k7ylkm.mongodb.net/?retryWrites=true&w=majority")
+
+	client, err := mongo.Connect(context.TODO(), clientOptions)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Connected to MongoDB!")
+
+	collection := client.Database("grocerylist").Collection("items")
+
+	return collection
 }

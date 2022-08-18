@@ -1,9 +1,9 @@
 package routes
 
 import (
-	"go.mongodb.org/mongo-driver/mongo"
+	"context"
+	"fmt"
+	"log"
+
 )
 
-func ConnectDB() *mongo.Collection {
-
-}
