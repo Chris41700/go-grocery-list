@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"go-grocery-list-backend/middleware"
+	"go-grocery-list-backend/routes"
 
 	"github.com/gorilla/mux"
 )
@@ -14,12 +15,12 @@ func main() {
 
 	router := mux.NewRouter().StrictSlash(true)
 
-	// router.HandleFunc("/", homepage).Methods("GET", "OPTIONS")                //Homepage
-	// router.HandleFunc("/list", getList).Methods("GET", "OPTIONS")             //View list
-	// router.HandleFunc("/list/{uid}", getItem).Methods("GET", "OPTIONS")       //View item
-	// router.HandleFunc("/list", createItem).Methods("POST", "OPTIONS")         //Add items
-	// router.HandleFunc("/list/{uid}", deleteItem).Methods("DELETE", "OPTIONS") //Delete item
-	// router.HandleFunc("/list", updateItem).Methods("PATCH", "OPTIONS")        //Update item
+	router.HandleFunc("/", routes.Homepage).Methods("GET")                //Homepage
+	router.HandleFunc("/list", routes.GetList).Methods("GET")             //View list
+	router.HandleFunc("/list/{uid}", routes.GetItem).Methods("GET")       //View item
+	router.HandleFunc("/list", routes.CreateItem).Methods("POST")         //Add items
+	router.HandleFunc("/list/{uid}", routes.DeleteItem).Methods("DELETE") //Delete item
+	router.HandleFunc("/list", routes.UpdateItem).Methods("PUT")          //Update item
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
