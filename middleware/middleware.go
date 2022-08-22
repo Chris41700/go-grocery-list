@@ -2,124 +2,94 @@ package middleware
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"go-grocery-list-backend/models"
 	"log"
-	"net/http"
 	"os"
+	"time"
 
-	"../models"
-
-	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func ConnectDB() *mongo.Collection {
+var collection *mongo.Collection
 
-	err := godotenv.Load(".env")
+func ConnectDB() {
+
+	err := godotenv.Load()
 
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
 	uri := os.Getenv("MONGODB_URL")
+	client, err := mongo.NewClient(options.Client().ApplyURI(uri))
 
-	clientOptions := options.Client().ApplyURI(uri)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	client, err := mongo.Connect(context.TODO(), clientOptions)
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	err = client.Connect(ctx)
 
-	defer func() {
-		if err = client.Disconnect(context.TODO()); err != nil {
-			panic(err)
-		}
-	}()
-
-	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		panic(err)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	fmt.Println("Connected to MongoDB!")
 
-	collection := client.Database("grocerylist").Collection("items")
+	defer client.Disconnect(ctx)
+	err = client.Ping(ctx, readpref.Primary())
 
-	return collection
-}
-
-func homepage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Endpoint called: homepage()")
-}
-
-func getList(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	var grocery_list models.GroceryList
-
-	json.NewEncoder(w).Encode(grocery_list)
-}
-
-func getItem(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	itemUID := mux.Vars(r)["uid"]
-
-	for _, singleItem := range grocery_list {
-		if singleItem.UID == itemUID {
-			json.NewEncoder(w).Encode(singleItem)
-		}
+	if err != nil {
+		log.Fatal(err)
 	}
-}
 
-func createItem(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	databases, err := client.ListDatabaseNames(ctx, bson.M{})
 
-	var item Item
-	_ = json.NewDecoder(r.Body).Decode(&item)
-
-	grocery_list = append(grocery_list, item)
-
-	json.NewEncoder(w).Encode(item)
-
-	fmt.Println("createItem func called")
-}
-
-func deleteItem(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	params := mux.Vars(r)
-
-	_deleteItemAtUid(params["uid"])
-
-	json.NewEncoder(w).Encode(grocery_list)
-}
-
-func _deleteItemAtUid(uid string) {
-	for index, item := range grocery_list {
-		if item.UID == uid {
-			grocery_list = append(grocery_list[:index], grocery_list[index+1:]...)
-			break
-		}
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	// database := client.Database("Cluster0")
+	// groceryCollection := database.Collection("grocery_list")
+	// itemCollection := database.Collection("item")
+
+	fmt.Println(databases)
 }
 
-func updateItem(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+func getAllItem() []primitive.M {
+	cur, err := collection.Find(context.Background(), bson.D{{}})
 
-	var item Item
-	_ = json.NewDecoder(r.Body).Decode(&item)
-
-	//params := mux.Vars(r)["uid"]
-
-	for i, singleItem := range grocery_list {
-		if singleItem.UID == item.UID {
-			singleItem.Name = item.Name
-			singleItem.Price = item.Price
-			singleItem.Quantity = item.Quantity
-			grocery_list = append(grocery_list[:i], singleItem)
-			json.NewEncoder(w).Encode(singleItem)
-		}
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	var results []primitive.M
+
+	for cur.Next(context.Background()) {
+		var result bson.M
+		err := cur.Decode(&result)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		results = append(results, result)
+	}
+
+	if err := cur.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	cur.Close(context.Background())
+
+	return results
+}
+
+func createItem() primitive.M {
+	result, insertErr := collection.InsertOne(ctx)
 }
