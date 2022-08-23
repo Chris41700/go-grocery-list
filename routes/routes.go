@@ -4,19 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"go-grocery-list-backend/middleware"
 	"go-grocery-list-backend/models"
 	"net/http"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var client *mongo.Client
+var groceryCollection *mongo.Collection = middleware.GetCollection(middleware.DB, "grocery_list")
+var itemCollection *mongo.Collection = middleware.GetCollection(middleware.DB, "item")
 
-// var database := client.Database("Cluster0")
-// var groceryCollection := database.Collection("grocery_list")
-// var itemCollection := database.Collection("item")
 // func getDatabase() (*mongo.Client, error) {
 // 	if client == nil {
 // 		err := godotenv.Load()
@@ -44,7 +44,7 @@ var client *mongo.Client
 // 		client = c
 // 	}
 
-// 	return client
+// 	return client, err
 // }
 
 func Homepage(w http.ResponseWriter, r *http.Request) {
@@ -57,9 +57,8 @@ func GetList(w http.ResponseWriter, r *http.Request) {
 
 	var grocery_list []models.Item
 
-	collection := client.Database("Cluster0").Collection("grocery_list")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	cursor, err := collection.Find(ctx, bson.M{})
+	cursor, err := groceryCollection.Find(ctx, bson.M{})
 
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -103,12 +102,21 @@ func CreateItem(w http.ResponseWriter, r *http.Request) {
 
 	json.NewDecoder(r.Body).Decode(&item)
 	// c := getDatabase(client, error)
-	collection := client.Database("Cluster0").Collection("item")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	result, err := collection.InsertOne(ctx, item)
+
+	newItem := models.Item{
+		ID:       primitive.NewObjectID(),
+		Name:     item.Name,
+		Price:    item.Price,
+		Quantity: item.Quantity,
+	}
+
+	result, err := itemCollection.InsertOne(ctx, newItem)
 
 	if err != nil {
-		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{ "message": "` + err.Error() + `"}`))
+		return
 	}
 
 	json.NewEncoder(w).Encode(result)

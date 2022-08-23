@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func ConnectDB() {
+var DB *mongo.Client = ConnectDB()
+
+func ConnectDB() *mongo.Client {
 
 	err := godotenv.Load()
 
@@ -36,23 +36,20 @@ func ConnectDB() {
 		log.Fatal(err)
 	}
 
+	// defer client.Disconnect(ctx)
+	err = client.Ping(ctx, nil)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	fmt.Println("Connected to MongoDB!")
 
-	defer client.Disconnect(ctx)
-	err = client.Ping(ctx, readpref.Primary())
+	return client
+}
 
-	if err != nil {
-		log.Fatal(err)
-	}
+func GetCollection(client *mongo.Client, collectionname string) *mongo.Collection {
+	collection := client.Database("Cluster0").Collection("grocery_list")
 
-	databases, err := client.ListDatabaseNames(ctx, bson.M{})
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	client.Database("Cluster0").Collection("grocery_list")
-	client.Database("Cluster0").Collection("item")
-
-	fmt.Println(databases)
+	return collection
 }
